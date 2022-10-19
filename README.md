@@ -1,8 +1,13 @@
 # EbOR
 EbOR: environments for Example-based Object Rearrangement
 
+Currently there are three environments in this repo:
 
-# Installation
+| *Circling-v0* | *Clustering-v0* | *CirclingClustering-v0* |
+|  ----  | ----  | ----  | 
+|<img src="demos/circling_demo.gif" align="middle" width="160"/>  | <img src="demos/clustering_demo.gif" align="middle" width="160"/>  | <img src="demos/hybrid_demo.gif" align="middle" width="160"/>    |
+
+# Install
 
 ## Requirements
 - Ubuntu >= 18.04
@@ -10,7 +15,7 @@ EbOR: environments for Example-based Object Rearrangement
 - gym >= 0.26.1
 - pybullet >= 3.2.5
 
-## Install
+## Installation
 ```
 git clone https://github.com/AaronAnima/EbOR
 

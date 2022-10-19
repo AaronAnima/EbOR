@@ -1,26 +1,3 @@
-# EbOR
-EbOR: environments for Example-based Object Rearrangement
-
-
-# Installation
-
-## Requirements
-- Ubuntu >= 18.04
-- python >= 3.6
-- gym >= 0.26.1
-- pybullet >= 3.2.5
-
-## Install
-```
-git clone https://github.com/AaronAnima/EbOR
-
-cd EbOR
-
-pip install -e .
-```
-
-# Getting Started
-```
 import gym
 import ebor
 # import cv2
@@ -42,4 +19,3 @@ while True:
 
         img = env.render()
         # cv2.imwrite('./in_process.png', img)
-```

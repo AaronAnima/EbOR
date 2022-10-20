@@ -5,7 +5,7 @@ Currently there are three environments in this repo:
 
 | *Circling-v0* | *Clustering-v0* | *CirclingClustering-v0* |
 |  ----  | ----  | ----  | 
-|<img src="demos/circling_demo.gif" align="middle" width="160"/>  | <img src="demos/clustering_demo.gif" align="middle" width="160"/>  | <img src="demos/hybrid_demo.gif" align="middle" width="160"/>    |
+|<img src="demos/circling_demo.gif" align="middle" width="230"/>  | <img src="demos/clustering_demo.gif" align="middle" width="230"/>  | <img src="demos/hybrid_demo.gif" align="middle" width="230"/>    |
 
 # Install
 

@@ -3,7 +3,7 @@ from gym.envs.registration import register
 # ===== Circling =====
 register(
     id='Circling-v0',
-    entry_point='ebor.Envs.PlacingBall:RLPlacingGym',
+    entry_point='ebor.Envs.Circling:CirclingGym',
     max_episode_steps=100,
     kwargs={
         'n_boxes': 7,
@@ -19,7 +19,7 @@ register(
 # ===== Clustering =====
 register(
     id='Clustering-v0',
-    entry_point='ebor.Envs.SortingBall:RLSortingGym',
+    entry_point='ebor.Envs.Clustering:ClusteringGym',
     max_episode_steps=100,
     kwargs={
         'n_boxes': 7,
@@ -35,7 +35,7 @@ register(
 # ===== Hybrid of Circling+Clustering =====
 register(
     id='CirclingClustering-v0',
-    entry_point='ebor.Envs.HybridBall:RLHybridGym',
+    entry_point='ebor.Envs.CirclingClustering:CirclingClusteringGym',
     max_episode_steps=100,
     kwargs={
         'n_boxes': 7,

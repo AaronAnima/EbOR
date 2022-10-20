@@ -7,7 +7,7 @@ import numpy as np
 import pybullet as p
 import os
 
-class Hybrid:
+class CirclingClustering:
     def __init__(self, max_episode_len=250, is_gui=False, time_freq=240, wall_bound=0.3, action_type='vel', **kwargs):
         n_boxes = kwargs['n_boxes']
         self.action_type = action_type
@@ -63,11 +63,6 @@ class Hybrid:
         if is_gui:
             # reset cam-pose to a top-down view
             p.resetDebugVisualizerCamera(cameraDistance=0.6, cameraYaw=0., cameraPitch=-89., cameraTargetPosition=[0, 0, 0], physicsClientId=self.cid)
-
-    @staticmethod
-    def seed(seed):
-        np.random.seed(seed)
-        random.seed(seed)
 
     def add_balls(self, positions, category):
         """
@@ -299,7 +294,7 @@ class Hybrid:
         p.disconnect(physicsClientId=self.cid)
 
 
-class RLHybrid(Hybrid):
+class CirclingClusteringGym(CirclingClustering):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.max_action = kwargs['max_action']
@@ -318,6 +313,7 @@ class RLHybrid(Hybrid):
             self.exp_data = None
 
         self.init_state = None
+        self._seed()
 
     def nop(self):
         """
@@ -438,29 +434,14 @@ class RLHybrid(Hybrid):
         return range [-self.max_action, self.max_action]
         """
         return np.random.normal(size=3*self.n_boxes_per_class * 2).clip(-1, 1) * self.max_action
-
-class RLHybridGym(gym.Env):
-    def __init__(self, **kwargs):
-        self.sim = RLHybrid(**kwargs)
-        self.action_space = self.sim.action_space
-        self.observation_space = self.sim.observation_space
-        self._seed()
     
     def _seed(self, seed=None):
         if seed:
-            self.sim.seed(seed)
+            np.random.seed(seed)
+            random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action):
-        return self.sim.step(action)
-
-    def reset(self, is_random=True):
-        return self.sim.reset(is_random)
-    
-    def render(self):
-        return self.sim.render()
-
     def get_obs(self):
-        return self.sim.get_state()
+        return self.get_state()
 

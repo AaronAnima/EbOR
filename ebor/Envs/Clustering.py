@@ -6,11 +6,9 @@ from gym.utils import seeding
 from gym import spaces
 import numpy as np
 import pybullet as p
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-class Placing:
+class Clustering(gym.Env):
     def __init__(self, max_episode_len=250, is_gui=False, time_freq=240, wall_bound=0.3, action_type='vel', **kwargs):
         n_boxes = kwargs['n_boxes']
         self.action_type = action_type
@@ -52,10 +50,13 @@ class Placing:
         self.transPlane4 = p.loadURDF(plane_name, pos4, ori4, globalScaling=scale, physicsClientId=self.cid)
 
         # init ball list for R,G,B balls
+        self.red_balls = []
+        self.green_balls = []
+        self.blue_balls = []
         self.name_mapping_urdf = {'red': f"sphere_red_{action_type}.urdf", 'green': f"sphere_green_{action_type}.urdf", 'blue': f"sphere_blue_{action_type}.urdf"}
+        # self.name_mapping_urdf = {'red': "cube_red.urdf", 'green': "cube_green.urdf", 'blue': "cube_blue.urdf"}
 
         self.n_boxes = self.n_boxes_per_class * 3
-        self.balls = []
 
         self.max_episode_len = max_episode_len
         self.num_episodes = 0
@@ -66,69 +67,78 @@ class Placing:
             p.resetDebugVisualizerCamera(cameraDistance=0.6, cameraYaw=0., cameraPitch=-89., cameraTargetPosition=[0, 0, 0], physicsClientId=self.cid)
 
 
-    @staticmethod
-    def seed(seed):
-        np.random.seed(seed)
-        random.seed(seed)
-
-    def add_balls(self, positions):
-        cur_list = self.balls
+    def add_balls(self, positions, category):
+        """
+        load balls at given positions
+        category in ['red', 'green', 'blue']
+        positions: [n_balls_per_class, 2] # 2-d coordinates
+        """
+        if category == 'red':
+            cur_list = self.red_balls
+        elif category == 'green':
+            cur_list = self.green_balls
+        else:
+            cur_list = self.blue_balls
         flag_load = (len(cur_list) == 0)
-        cur_urdf = self.name_mapping_urdf['red']
-        iter_list = range(self.n_boxes) if flag_load else cur_list
+        cur_urdf = self.name_mapping_urdf[category]
+        iter_list = range(self.n_boxes_per_class) if flag_load else cur_list
+        radius_list = [1.0, 1.5, 2.0]
         for i, item in enumerate(iter_list):
             horizon_p = positions[i]
             horizon_p = np.clip(horizon_p, -(self.bound-self.r), (self.bound-self.r))
             cur_ori = p.getQuaternionFromEuler([0, 0, 0])
             if flag_load:
-                self.balls.append(p.loadURDF(cur_urdf, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori, physicsClientId=self.cid))
-            else:
+                # cur_list.append(p.loadURDF(cur_urdf, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori,
+                #                            globalScaling=random.sample(radius_list, 1)[0], physicsClientId=self.cid))
                 # set_trace()
+                cur_list.append(p.loadURDF(cur_urdf, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori, physicsClientId=self.cid))
+            else:
                 p.resetBasePositionAndOrientation(item, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori, physicsClientId=self.cid)
                 p.resetBaseVelocity(item, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
     
-    def get_positions(self, is_random=True, is_permutation=True, dynamic_center=True):
+    def get_positions(self, center=None):
         """
         sample i.i.d. gaussian 2-d positions centered on 'center'
         return positions: [n_boxes_per_class, 2]
         """
-        if not is_random:
-            ''' sample radius, center '''
-            r_min = self.r / np.sin(np.pi/len(self.balls))
-            r_max = self.bound - self.r
-            assert r_max > r_min
-            center_bound = self.bound - self.r - r_min
-            if dynamic_center:
-                center = np.random.uniform(-center_bound, center_bound, size=(2, )).reshape(-1, 2)
-                center = np.repeat(center, self.n_boxes, axis=0)
-            else:
-                center = np.zeros((self.n_boxes, 2))
-            r_max_ = self.bound - self.r - np.max(np.abs(center))
-            if not dynamic_center:
-                mu = (r_max_+r_min)/2
-                std = 0.01
-                r_sampled = np.random.normal(size=(self.n_boxes, )) * std + mu
-            else:
-                r_sampled = np.random.uniform(r_min, r_max_, size=(1, ))
-                r_sampled = np.repeat(r_sampled, self.n_boxes, axis=0)
-            r_sampled = np.clip(r_sampled, r_min, r_max_)
-
-
-            ''' sample theta '''
-            thetas = np.array(range(self.n_boxes)) * (2*np.pi/self.n_boxes)
-
-            if is_permutation:
-                permutation = np.random.permutation(self.n_boxes)
-                thetas = thetas[permutation]
-                r_sampled = r_sampled[permutation]
-
-            positions = np.concatenate([(r_sampled*np.cos(thetas)).reshape((-1, 1)),
-                                        (r_sampled*np.sin(thetas)).reshape((-1, 1))], axis=-1)
+        if center is not None:
+            scale = 0.05
+            # scale = 0.2
+            positions = np.random.normal(size=(self.n_boxes_per_class, 2)) * scale
             positions += center
+            positions = np.clip(positions, -(self.bound-self.r), (self.bound-self.r))
         else:
-            scale = self.bound - self.r
-            positions = np.random.uniform(-1, 1, size=(self.n_boxes, 2)) * scale
+            # scale = self.bound / 4
+            scale = self.bound / 1
+            positions = np.random.uniform(-1, 1, size=(self.n_boxes_per_class, 2)) * scale
         return positions
+
+    @staticmethod
+    def get_centers(random_flip=True, random_rotate=True):
+        """
+        sample centers for each category, note that each pair of centers are equally spaced
+        random_flip: determine r, g, b or r, b, g   clockwise
+        random_rotate: determine direction angle of r's center(0, 120, 240)
+        return red_center:[2], green_center: [2], blue_center: [2]
+        """
+        # init sample-center for each class
+        if random_rotate:
+            # theta_red = np.random.uniform(0, 2*np.pi)
+            theta_red = np.random.randint(0, 3)*2*np.pi
+        else:
+            theta_red = 0
+        delta = [-2*np.pi/3, 2*np.pi/3]
+        if random_flip:
+            coin = np.random.randint(2)
+        else:
+            coin = 0
+        theta_green = theta_red + delta[coin]
+        theta_blue = theta_red + delta[1-coin]
+        radius = 0.18
+        red_center = radius*np.array([np.cos(theta_red), np.sin(theta_red)])
+        green_center = radius*np.array([np.cos(theta_green), np.sin(theta_green)])
+        blue_center = radius*np.array([np.cos(theta_blue), np.sin(theta_blue)])
+        return red_center, green_center, blue_center
 
     def set_state(self, state, verbose=None):
         """
@@ -136,8 +146,8 @@ class Placing:
         state: [3*n_balls_per_class, 2]
         """
         # verbose is to fit the api
-        assert state.shape[0] == len(self.balls) * 2
-        for idx, boxId in enumerate(self.balls):
+        assert state.shape[0] == len(self.blue_balls + self.red_balls + self.green_balls) * 2
+        for idx, boxId in enumerate(self.red_balls + self.green_balls + self.blue_balls):
             cur_state = state[idx * 2:(idx + 1) * 2]
             # un-normalize
             cur_pos = (self.bound-self.r) * cur_state
@@ -151,7 +161,7 @@ class Placing:
         check whether all objects are physically correct(no floating balls)
         """
         positions = []
-        for ballId in (self.balls):
+        for ballId in (self.red_balls + self.green_balls + self.blue_balls):
             pos, ori = p.getBasePositionAndOrientation(ballId, physicsClientId=self.cid)
             positions.append(pos)
         positions = np.stack(positions)
@@ -169,7 +179,7 @@ class Placing:
         if norm, then normalize each 2-d position to [-1, 1]
         """
         box_states = []
-        for boxId in self.balls:
+        for boxId in (self.red_balls+self.green_balls+self.blue_balls):
             pos, ori = p.getBasePositionAndOrientation(boxId, physicsClientId=self.cid)
 
             pos = np.array(pos[0:2], dtype=np.float32)
@@ -181,7 +191,7 @@ class Placing:
             box_state = pos
             box_states.append(box_state)
         box_states = np.concatenate(box_states, axis=0)
-        assert box_states.shape[0] == len(self.balls) * 2
+        assert box_states.shape[0] == len(self.red_balls+self.green_balls+self.blue_balls) * 2
         return box_states
 
     def set_velocity(self, vels):
@@ -191,7 +201,7 @@ class Placing:
         """
         # vels.shape = [num_boxes, 2]
         # set_trace()
-        for boxId, vel in zip(self.balls, vels):
+        for boxId, vel in zip(self.red_balls+self.green_balls+self.blue_balls, vels):
             vel = [vel[0].item(), vel[1].item(), 0]
             # print(vel)
             # set_trace()
@@ -237,7 +247,7 @@ class Placing:
         collision_num = sum_{1 <= i < j <= K} is_collision(object_i, object_j)
         """
         # collision detection
-        items = self.balls
+        items = self.red_balls + self.green_balls + self.blue_balls
         collisions = np.zeros((len(items), len(items)))
         for idx1, ball_1 in enumerate(items[:-1]):
             for idx2, ball_2 in enumerate(items[idx1+1:]):
@@ -246,6 +256,52 @@ class Placing:
                 # for debug
                 # print(f'{name1} {name2} {len(points)}')
         return np.sum(collisions).item() if centralized else collisions
+
+    def calc_reward(self):
+        """
+        return a scalar to measure the plausibility of sorting
+        r = intra_var*intra_scale # intra variance of each class
+          + corss_scale*center_var # inter-variance of each pair of classes
+          + c_dist_scale*(r_c_dist+g_c_dist+b_c_dist) # Is the distance between each center and the origin correct
+        """
+        cur_state = self.get_state()
+
+        # split states and calc each center
+        red_states = np.reshape(cur_state[0:2*self.n_boxes_per_class], (self.n_boxes_per_class, 2))
+        green_states = np.reshape(cur_state[2*self.n_boxes_per_class:4*self.n_boxes_per_class], (self.n_boxes_per_class, 2))
+        blue_states = np.reshape(cur_state[4*self.n_boxes_per_class:6*self.n_boxes_per_class], (self.n_boxes_per_class, 2))
+        red_center = np.mean(red_states, axis=0)[None, :]
+        green_center = np.mean(green_states, axis=0)[None, :]
+        blue_center = np.mean(blue_states, axis=0)[None, :]
+
+        # calc intra-var
+        radius = 0.18
+        r_c_dist = np.abs(np.sqrt(np.sum(red_center**2)) - radius)
+        g_c_dist = np.abs(np.sqrt(np.sum(green_center**2)) - radius)
+        b_c_dist = np.abs(np.sqrt(np.sum(blue_center**2)) - radius)
+        red_var = np.mean(np.sum((red_states - red_center)**2, axis=-1), axis=0)
+        green_var = np.mean(np.sum((green_states - green_center)**2, axis=-1), axis=0)
+        blue_var = np.mean(np.sum((blue_states - blue_center)**2, axis=-1), axis=0)
+        intra_var = (red_var+green_var+blue_var)/3
+
+        # calc extra-var
+        centers = np.stack((red_center, green_center, blue_center), axis=0)
+        mean_center = np.mean(centers, axis=0)[None, :]
+        center_var = np.mean(np.sum((centers - mean_center)**2, axis=-1), axis=0)[0]
+
+        # sum and balance   reward
+        intra_scale = -1.0
+        c_dist_scale = -1.0
+        corss_scale = 5.0
+        return intra_var.item()*intra_scale + corss_scale*center_var.item() + c_dist_scale*(r_c_dist+g_c_dist+b_c_dist).item()
+
+    def change_dynamics(self):
+        ball_list = self.red_balls + self.green_balls + self.blue_balls
+        for body_id in ball_list:
+            p.changeDynamics(body_id, -1, lateralFriction=1., spinningFriction=1, rollingFriction=1,
+                                restitution=0.1, physicsClientId=self.cid)
+        p.changeDynamics(self.plane_base, -1, lateralFriction=0., spinningFriction=0, rollingFriction=0,
+                                restitution=0.1, physicsClientId=self.cid)
 
     @staticmethod
     def sample_action():
@@ -261,7 +317,7 @@ class Placing:
         p.disconnect(physicsClientId=self.cid)
 
 
-class RLPlacing(Placing):
+class ClusteringGym(Clustering):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.max_action = kwargs['max_action']
@@ -279,16 +335,21 @@ class RLPlacing(Placing):
         else:
             self.exp_data = None
 
-        self.init_state = self.reset(is_random=True)
+        self.init_state = None
+        self._seed()
+
+    def nop_action(self):
+        action = np.zeros((self.n_boxes, 2))
+        return action
 
     def nop(self):
         """
         no operation at this time step
         """
-        action = np.zeros((self.n_boxes, 2))
+        action = self.nop_action()
         return self.step(action)
 
-    def step(self, vels, step_size=8, centralized=False, soft_collision=False):
+    def step(self, vels, step_size=8, centralized=True, soft_collision=False):
         """
         vels: [3*n_balls_per_class, 2], 2-d linear velocity
         for each dim,  [-max_vel,  max_vel]
@@ -296,9 +357,9 @@ class RLPlacing(Placing):
         # action: numpy, [num_box*2]
         collision_num = 0
         old_state = self.get_state()
-        old_pos = old_state.reshape(self.n_boxes, 2)
+        old_pos = old_state.reshape(3*self.n_boxes_per_class, 2)
 
-        vels = np.reshape(vels, (self.n_boxes, 2)) # [60] -> [30, 2]
+        vels = np.reshape(vels, (len(self.red_balls)*3, 2)) # [60] -> [30, 2]
         # max_vel_norm = np.max((np.max(np.linalg.norm(vels, ord=np.inf, axis=-1)), 1e-7))
         max_vel_norm = np.max(np.abs(vels))
         scale_factor = self.max_action / (max_vel_norm+1e-7)
@@ -320,46 +381,51 @@ class RLPlacing(Placing):
 
         ''' M3D20 modify '''
         if not soft_collision:
-            collision_num = (collision_num > 0)
+            collision_num = (collision_num > 0) 
 
 
         r = 0
         # judge if is done
         self.cur_steps += 1
         is_done = self.cur_steps >= self.max_episode_len
-        # print(f'{self.cur_steps}, {is_done}, time cost: {time.time() - t_s}')
 
         new_pos = self.get_state().reshape(3*self.n_boxes_per_class, 2)
         delta_pos = new_pos - old_pos
         vel_err = np.max(np.abs(delta_pos*self.time_freq*self.bound/step_size - vels))/self.max_action
         vel_err_mean = np.mean(np.abs(delta_pos*self.time_freq*self.bound/step_size - vels))/self.max_action
-        # if vel_err_mean > 0.1:
-        #     print(f'Warning! Large mean-vel-err at cur step: {vel_err}!')
 
         return self.get_state(), r, is_done, _, {'delta_pos': delta_pos, 'collision_num': collision_num,
                                               'vel_err': vel_err, 'vel_err_mean': vel_err_mean,
                                               'is_done': is_done, 'progress': self.cur_steps / self.max_episode_len,
                                               'init_state': self.init_state, 'cur_steps': self.cur_steps, 'max_episode_len': self.max_episode_len}
 
-    def reset(self, is_random=True):
+    def reset(self, is_random=True, random_flip=True, random_rotate=True, remove_collision=True):
         self.num_episodes += 1
         t_s = time.time()
-        positions = self.get_positions(is_random)
+        if is_random:
+            red_positions, green_positions, blue_positions = self.get_positions(), self.get_positions(), self.get_positions()
+        else:
+            # init to target distribution
+            red_center, green_center, blue_center = self.get_centers(random_flip, random_rotate)
+            red_positions, green_positions, blue_positions = self.get_positions(red_center), self.get_positions(green_center), self.get_positions(blue_center)
         
-        self.add_balls(positions)
+        self.add_balls(red_positions, 'red')
+        self.add_balls(green_positions, 'green')
+        self.add_balls(blue_positions, 'blue')
 
         p.stepSimulation(physicsClientId=self.cid)
-        total_steps = 0
-        while self.get_collision_num() > 0:
-            for _ in range(20):
-                p.stepSimulation(physicsClientId=self.cid)
-            total_steps += 20
-            if total_steps > 10000:
-                print('Warning! Reset takes too much trial!')
-                break
-        # set_trace()
+        ''' step几下，弄掉重叠 '''
+        if remove_collision:
+            total_steps = 0
+            while self.get_collision_num() > 0:
+                for _ in range(20):
+                    p.stepSimulation(physicsClientId=self.cid)
+                total_steps += 20
+                if total_steps > 10000:
+                    print('Warning! Reset takes too much trial!')
+                    break
+        
         self.cur_steps = 0
-        # print(f'No.{self.num_episodes} Episodes, reset now! time cost: {time.time() - t_s}')
         self.init_state = self.get_state()
         return self.init_state
 
@@ -386,29 +452,15 @@ class RLPlacing(Placing):
         """
         return np.random.normal(size=3*self.n_boxes_per_class * 2).clip(-1, 1) * self.max_action
 
-
-class RLPlacingGym(gym.Env):
-    def __init__(self, **kwargs):
-        self.sim = RLPlacing(**kwargs)
-        self.action_space = self.sim.action_space
-        self.observation_space = self.sim.observation_space
-        self._seed()
+    def get_obs(self):
+        return self.sim.get_state()
     
     def _seed(self, seed=None):
         if seed:
-            self.sim.seed(seed)
+            np.random.seed(seed)
+            random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action):
-        return self.sim.step(action)
-
-    def reset(self, is_random=True):
-        return self.sim.reset(is_random)
-    
-    def render(self):
-        return self.sim.render()
-
     def get_obs(self):
-        return self.sim.get_state()
-
+        return self.get_state()

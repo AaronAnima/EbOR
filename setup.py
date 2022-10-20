@@ -21,9 +21,9 @@ setup(
     license='MIT license',
     url='https://github.com/AaronAnima/EbOR',
     install_requires=[
-        'gym>=0.26.1',
+        'gym>=0.20.0,<0.25.0a0',
         'numpy',
-        'pybullet>=3.2.5'
+        'pybullet>=3.2.5',
     ],
     python_requires='>=3.6',
     platforms=['Linux Ubuntu'],  

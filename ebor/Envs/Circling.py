@@ -282,7 +282,7 @@ class CirclingGym(CirclingSimulator):
         action = np.zeros((self.n_boxes, 2))
         return self.step(action)
 
-    def step(self, vels, step_size=8, centralized=False, soft_collision=False):
+    def step(self, vels, step_size=4, centralized=False, soft_collision=False):
         """
         vels: [3*n_balls_per_class, 2], 2-d linear velocity
         for each dim,  [-max_vel,  max_vel]
@@ -292,24 +292,18 @@ class CirclingGym(CirclingSimulator):
         old_state = self.get_state()
         old_pos = old_state.reshape(self.n_boxes, 2)
 
-        vels = np.reshape(vels, (self.n_boxes, 2)) # [60] -> [30, 2]
-        # max_vel_norm = np.max((np.max(np.linalg.norm(vels, ord=np.inf, axis=-1)), 1e-7))
+        vels = np.reshape(vels, (self.n_boxes, 2)) 
         max_vel_norm = np.max(np.abs(vels))
         scale_factor = self.max_action / (max_vel_norm+1e-7)
         scale_factor = np.min([scale_factor, 1])
         vels = scale_factor * vels
-        # vels = np.clip(vels, -self.max_action, self.max_action) # clip to action spaces
         max_vel = vels.max()
         if max_vel > self.max_action:
             print(f'!!!!!current max velocity {max_vel} exceeds max action {self.max_action}!!!!!')
         self.set_velocity(vels)
-        # set_trace()
-        # old_state = self.get_state()
         for _ in range(step_size):
             p.stepSimulation(physicsClientId=self.cid)
-            # self.set_velocity(vels)
             collision_num += self.get_collision_num(centralized=centralized)
-        # new_state = self.get_state()
         collision_num /= step_size 
 
         ''' M3D20 modify '''
@@ -321,19 +315,17 @@ class CirclingGym(CirclingSimulator):
         # judge if is done
         self.cur_steps += 1
         is_done = self.cur_steps >= self.max_episode_len
-        # print(f'{self.cur_steps}, {is_done}, time cost: {time.time() - t_s}')
 
         new_pos = self.get_state().reshape(3*self.n_boxes_per_class, 2)
         delta_pos = new_pos - old_pos
         vel_err = np.max(np.abs(delta_pos*self.time_freq*self.bound/step_size - vels))/self.max_action
         vel_err_mean = np.mean(np.abs(delta_pos*self.time_freq*self.bound/step_size - vels))/self.max_action
-        # if vel_err_mean > 0.1:
-        #     print(f'Warning! Large mean-vel-err at cur step: {vel_err}!')
+        infos = {'delta_pos': delta_pos, 'collision_num': collision_num,
+                'vel_err': vel_err, 'vel_err_mean': vel_err_mean,
+                'is_done': is_done, 'progress': self.cur_steps / self.max_episode_len,
+                'init_state': self.init_state, 'cur_steps': self.cur_steps, 'max_episode_len': self.max_episode_len}
 
-        return self.get_state(), r, is_done, _, {'delta_pos': delta_pos, 'collision_num': collision_num,
-                                              'vel_err': vel_err, 'vel_err_mean': vel_err_mean,
-                                              'is_done': is_done, 'progress': self.cur_steps / self.max_episode_len,
-                                              'init_state': self.init_state, 'cur_steps': self.cur_steps, 'max_episode_len': self.max_episode_len}
+        return self.get_state(), r, is_done, infos
 
     def reset(self, is_random=True):
         self.num_episodes += 1
@@ -387,6 +379,11 @@ class CirclingGym(CirclingSimulator):
             random.seed(seed)
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
+    
+    @staticmethod
+    def seed(seed):
+        np.random.seed(seed)
+        random.seed(seed)
 
     def get_obs(self):
         return self.get_state()

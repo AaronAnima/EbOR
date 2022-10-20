@@ -12,7 +12,7 @@ Currently there are three environments in this repo:
 ## Requirements
 - Ubuntu >= 18.04
 - python >= 3.6
-- gym >= 0.26.1
+- gym>=0.20.0,<0.25.0a0
 - pybullet >= 3.2.5
 
 ## Installation

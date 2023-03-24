@@ -14,6 +14,7 @@ Currently there are three environments in this repo:
 - python >= 3.6
 - gym>=0.20.0,<0.25.0a0
 - pybullet >= 3.2.5
+- opencv-python >= 4.6.0
 
 ## Installation
 ```
@@ -25,30 +26,31 @@ pip install -e .
 ```
 
 # Getting Started
+Launch the environment and run a random agent to see the environment in action:
+```
+python random_agent.py
+```
+Minimal example:
 ```
 import gym
 import ebor
-# import cv2
+import cv2
 
-env = gym.make('CirclingClustering-v0')
-x = env.reset() # to init objects
-
+env = gym.make('Clustering-v0') # choose the environment
+state = env.reset(is_random=False)  # if is_random=False, the env will reset to a target example state
+cv2.imshow('target', env.render()) # show the target image
+cv2.waitKey(1)
 while True:
     done = False
-    x = env.reset(is_random=False) # if is_random=False, the env will reset to a target example state
-
-    img = env.render()
-    # cv2.imwrite('./target_example.png', img) 
-
-    x = env.reset()
-    while not done:
-        random_action = env.action_space.sample()
-        x, reward, done, truncated, info = env.step(random_action)
-
-        img = env.render()
-        # cv2.imwrite('./in_process.png', img)
+    state = env.reset()
+    while not done: # get done in 100 steps
+        random_action = env.action_space.sample() # get a random action
+        state, reward, done, info = env.step(random_action) # take a step
+        img = env.render() # render the image
+        cv2.imshow('img', img) # show the image
+        cv2.waitKey(1)
 ```
-
+The environment 
 ## Citation
 ```
 @inproceedings{

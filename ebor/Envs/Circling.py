@@ -64,7 +64,7 @@ class CirclingSimulator(gym.Env):
             # reset cam-pose to a top-down view
             p.resetDebugVisualizerCamera(cameraDistance=0.6, cameraYaw=0., cameraPitch=-89., cameraTargetPosition=[0, 0, 0], physicsClientId=self.cid)
 
-    def add_balls(self, positions):
+    def add_balls(self, positions, category):
         cur_list = self.balls
         flag_load = (len(cur_list) == 0)
         cur_urdf = self.name_mapping_urdf['red']

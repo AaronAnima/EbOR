@@ -1,5 +1,5 @@
 # EbOR
-EbOR: environments for Example-based Object Rearrangement
+EbOR: Environments for Example-based Object Rearrangement
 
 Currently there are three environments in this repo:
 
@@ -51,18 +51,19 @@ while True:
 
 ## Citation
 ```
-@inproceedings{wu2022targf,
-  title     = {Tar{GF}: Learning Target Gradient Field for Object Rearrangement},
-  author    = {Mingdong Wu and fangwei zhong and Yulong Xia and Hao Dong},
-  booktitle = {Thirty-Sixth Conference on Neural Information Processing Systems},
-  year      = {2022},
-  url       = {https://openreview.net/forum?id=Euv1nXN98P3}
+@inproceedings{
+wu2022targf,
+title={Tar{GF}: Learning Target Gradient Field for Object Rearrangement},
+author={Mingdong Wu and Fangwei Zhong and Yulong Xia and Hao Dong},
+booktitle={Advances in Neural Information Processing Systems},
+editor={Alice H. Oh and Alekh Agarwal and Danielle Belgrave and Kyunghyun Cho},
+year={2022},
+url={https://openreview.net/forum?id=Euv1nXN98P3}
 }
-
 ```
 
 ## Contact
-If you have any suggestion or questions, please get in touch at [wmingd@pku.edu.cn](wmingd@pku.edu.cn) or [zfw1226@gmail.com](zfw1226@gmail.com).
+If you have any suggestion or questions, please get in touch at [wmingd@pku.edu.cn](wmingd@pku.edu.cn) or [zfw@pku.edu.cn](zfw@pku.edu.cn)..
 
 ## LICENSE
 TarGF has an MIT license, as found in the [LICENSE](./LICENSE) file.

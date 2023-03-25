@@ -56,8 +56,11 @@ class BallEnv(gym.Env):
         # init ball list for R,G,B balls
         self.balls = {key: [] for key in self.catetory_list}
 
-        self.name_mapping_urdf = {'red': f"sphere_red_{action_type}.urdf", 'green': f"sphere_green_{action_type}.urdf",
-                                  'blue': f"sphere_blue_{action_type}.urdf"}
+        self.name_mapping_urdf = {'Red': f"sphere_red_{action_type}.urdf", 'Green': f"sphere_green_{action_type}.urdf",
+                                  'Blue': f"sphere_blue_{action_type}.urdf"}
+
+        # self.name_mapping_urdf = {'red': f"cube_red.urdf", 'green': f"cube_green.urdf",
+        #                           'blue': f"cube_blue.urdf"}
 
         self.n_boxes = self.n_boxes_per_class * self.num_class # assume each class of the same number of balls
         # self.balls = []

@@ -1,13 +1,13 @@
 import numpy as np
 
 def get_example_positions(n_per_class, category_list, patterns,  bound, r):
-    if patterns == 'clustering':
+    if patterns == 'Cluster':
         balls_dict = get_cluster_positions(n_per_class, category_list, bound, r, scale=0.05)
-    elif patterns == 'circle':
+    elif patterns == 'Circle':
         balls_dict = get_circle_positions(n_per_class, category_list, bound, r, scale=0.05, random_color=True)
-    if patterns == 'circle_cluster':
+    if patterns == 'CircleCluster':
         balls_dict = get_circle_positions(n_per_class, category_list, bound, r, scale=0.05, random_color=False)
-    elif patterns == 'random':
+    else:
         balls_dict = get_random_positions(n_per_class, category_list, bound, r, scale=0.3)
     return balls_dict
 

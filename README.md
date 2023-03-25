@@ -3,7 +3,7 @@ EbOR: Environments for Example-based Object Rearrangement
 
 Currently there are three environments in this repo:
 
-| *Circling-v0* | *Clustering-v0* | *CirclingClustering-v0* |
+| *Circle-21Ball1Class-v0* | *Cluster-21Ball3Class-v0* | *CircleCluster-21Ball3Class-v0* |
 |  ----  | ----  | ----  | 
 |<img src="demos/circling_demo.gif" align="middle" width="230"/>  | <img src="demos/clustering_demo.gif" align="middle" width="230"/>  | <img src="demos/hybrid_demo.gif" align="middle" width="230"/>    |
 
@@ -28,7 +28,7 @@ pip install -e .
 # Getting Started
 Launch the environment and run a random agent to see the environment in action:
 ```
-python random_agent.py
+python random_agent.py --render
 ```
 Minimal example:
 ```
@@ -36,7 +36,7 @@ import gym
 import ebor
 import cv2
 
-env = gym.make('Clustering-v0') # choose the environment
+env = gym.make('CircleCluster-21Ball3Class-v0') # choose the environment
 state = env.reset(is_random=False)  # if is_random=False, the env will reset to a target example state
 cv2.imshow('target', env.render()) # show the target image
 cv2.waitKey(1)

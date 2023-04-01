@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 from ebor.Envs.utils import load_dataset
 
 # load expert data for RCE

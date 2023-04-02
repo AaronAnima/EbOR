@@ -1,13 +1,12 @@
 import numpy as np
 import random
-from ipdb import set_trace
 
 def sample_example_positions(num_per_class, category_list, pattern, bound, r):
     if pattern == 'Cluster':
         balls_dict = sample_cluster_positions(num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'Circle':
         balls_dict = sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05, random_color=True)
-    if pattern == 'CircleCluster':
+    elif pattern == 'CircleCluster':
         balls_dict = sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05, random_color=False)
     else:
         balls_dict = sample_random_positions(num_per_class, category_list, bound, r, scale=0.3)
@@ -111,6 +110,7 @@ def sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05,
         positions += center[i * num_per_class: (i + 1) * num_per_class]
         positions = np.clip(positions, -(bound - r), (bound - r))
         balls_dict[category_list[i]] = positions
+
     return balls_dict
 
 

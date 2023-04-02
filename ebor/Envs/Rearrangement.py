@@ -3,6 +3,8 @@ from gym.utils import seeding
 from gym.spaces import Dict, Discrete, Box
 import numpy as np
 import pybullet as p
+import cv2
+import matplotlib.pyplot as plt
 from copy import deepcopy
 from ipdb import set_trace
 from collections import OrderedDict
@@ -181,16 +183,17 @@ class BallGym(BallEnv):
         self.prev_state = cur_state
         return cur_state, r, is_done, infos
 
-    def reset(self, is_random=True, remove_collision=False):
+    def reset(self, is_random=True, remove_collision=True):
         self.num_episodes += 1
         # initialise objects
         if is_random:
             balls_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern='random', bound=self.bound, r=self.r)
         else:  # init to target distribution
             balls_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern=self.pattern, bound=self.bound, r=self.r)
+
         for color, positions in balls_dict.items():
             self.balls[color] = self.add_balls(positions, color)
-
+        
         # remove remaining collisions via physical simulation
         self.balls_list = [value for sublist in self.balls.values() for value in sublist]
         p.stepSimulation(physicsClientId=self.cid)

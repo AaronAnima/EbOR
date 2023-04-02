@@ -77,13 +77,13 @@ class BallEnv(gym.Env):
         cur_urdf = self.name_mapping_urdf[category] # get the urdf file name
         iter_list = range(self.num_per_class) if flag_load else cur_list
         for i, item in enumerate(iter_list):
-            horizon_p = positions[i]
-            horizon_p = np.clip(horizon_p, -(self.bound - self.r), (self.bound - self.r))
+            cur_pos = positions[i]
+            cur_pos = np.clip(cur_pos, -(self.bound - self.r), (self.bound - self.r))
             cur_ori = p.getQuaternionFromEuler([0, 0, 0])
             if flag_load:
-                cur_list.append(p.loadURDF(cur_urdf, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori, physicsClientId=self.cid))
+                cur_list.append(p.loadURDF(cur_urdf, [cur_pos[0].item(), cur_pos[1].item(), self.r], cur_ori, physicsClientId=self.cid))
             else:
-                p.resetBasePositionAndOrientation(item, [horizon_p[0].item(), horizon_p[1].item(), self.r], cur_ori, physicsClientId=self.cid)
+                p.resetBasePositionAndOrientation(item, [cur_pos[0].item(), cur_pos[1].item(), self.r], cur_ori, physicsClientId=self.cid)
                 p.resetBaseVelocity(item, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
         return cur_list
 

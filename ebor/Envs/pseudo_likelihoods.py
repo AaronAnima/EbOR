@@ -8,7 +8,7 @@ def get_pseudo_likelihood(state, pattern, num_per_class, category_list, bound, r
         balls_dict = cluster_pseudo_likelihood(state, num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'Circle':
         balls_dict = circle_pseudo_likelihood(state, num_per_class, category_list)
-    if pattern == 'CircleCluster':
+    elif pattern == 'CircleCluster':
         balls_dict = circlecluster_pseudo_likelihood(state, num_per_class, category_list)
     else:
         raise NotImplementedError()
@@ -36,7 +36,7 @@ def get_centers_list(num_classes, radius=0.18, random_shuffle=True, random_rotat
     deltas_list = []
     if random_shuffle:
         deltas_list = list(itertools.permutations([2 * idx * np.pi / num_classes for idx in range(1, num_classes)]))
-        deltas_list = [[0]+item for item in deltas_list]
+        deltas_list = [[0]+list(item) for item in deltas_list]
     else:
         deltas_list.append([2 * idx * np.pi / num_classes for idx in range(0, num_classes)])
     for theta_0 in theta0s_list:
@@ -45,7 +45,7 @@ def get_centers_list(num_classes, radius=0.18, random_shuffle=True, random_rotat
             for i in range(num_classes):
                 theta_i = theta_0 + deltas[i]
                 centers.append(radius * np.array([np.cos(theta_i), np.sin(theta_i)]))
-            centers_list.append(centers_list)
+            centers_list.append(centers)
     return centers_list
 
 def cluster_pseudo_likelihood(state_np, num_per_class, category_list, bound, r, radius=0.18, scale=0.05, is_normed=True):

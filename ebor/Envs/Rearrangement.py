@@ -168,7 +168,7 @@ class BallGym(BallEnv):
 
         # current state
         cur_state = self.get_state(self.balls_list)
-
+        
         # calc reward, currently it is defined as delta-likelihood
         r = self.pseudo_likelihoods([cur_state]) - self.pseudo_likelihoods([self.prev_state])
         

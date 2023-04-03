@@ -5,14 +5,15 @@ from ipdb import set_trace
 
 def get_pseudo_likelihood(state, pattern, num_per_class, category_list, bound, r):
     if pattern == 'Cluster':
-        balls_dict = cluster_pseudo_likelihood(state, num_per_class, category_list, bound, r, scale=0.05)
-    elif pattern == 'Circle':
-        balls_dict = circle_pseudo_likelihood(state, num_per_class, category_list)
-    if pattern == 'CircleCluster':
-        balls_dict = circlecluster_pseudo_likelihood(state, num_per_class, category_list)
+        pseudo_likelihood = cluster_pseudo_likelihood(state, num_per_class, category_list, bound, r, scale=0.05)
+    elif pattern == 'Circle-Random':
+        pseudo_likelihood = circle_pseudo_likelihood(state, num_per_class, category_list)
+    if pattern == 'Circle-AABB':
+        pseudo_likelihood = circlecluster_pseudo_likelihood(state, num_per_class, category_list)
     else:
-        raise NotImplementedError()
-    return balls_dict
+        ''' not implemented! '''
+        pseudo_likelihood = 0
+    return pseudo_likelihood
 
 # -----------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------- Clustering ----------------------------------------------------------

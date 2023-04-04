@@ -1,7 +1,12 @@
 import numpy as np
 import random
 
+# shape_list = ['Circle', 'Triangle', 'Rectangle']
+# color_list = ['AABB', 'ABAB', 'Random']
+
 def sample_example_positions(num_per_class, category_list, pattern, bound, r):
+    patterns = pattern.split('-')
+    shape_pattern, color_pattern = patterns[0], patterns[1]
     if pattern == 'Cluster':
         balls_dict = sample_cluster_positions(num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'Circle':

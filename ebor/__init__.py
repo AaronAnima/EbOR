@@ -1,6 +1,6 @@
 from gym.envs.registration import register
 # pattern combination:
-shape_list = ['Circle', 'Triangle', '']
+shape_list = ['Circle', 'Triangle', 'Rectangle']
 color_list = ['AABB', 'ABAB', 'Random']
 # max categories / num objects
 category_list = ['Red', 'Green', 'Blue']

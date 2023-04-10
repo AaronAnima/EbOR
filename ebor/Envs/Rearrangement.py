@@ -14,20 +14,25 @@ from ebor.Envs.target_generation import sample_example_positions
 from ebor.Envs.pseudo_likelihoods import get_pseudo_likelihood
 
 class BallGym(BallEnv):
-    def __init__(self, pattern='clustering', **kwargs):
+    def __init__(self, pattern='clustering', auto_flatten=False, **kwargs):
         super().__init__(**kwargs)
         self.max_action = kwargs['max_action']
         self.num_classes = len(self.catetory_list)
+        self.auto_flatten = auto_flatten
+
         # create action space
         self.action_space = OrderedDict()
         for idx in range(self.num_objs):
             self.action_space[f'obj{idx}'] = Dict({"linear_vel": Box(-self.max_action, self.max_action, shape=(2,), dtype=np.float32)})
         self.action_space = Dict(self.action_space)
+
         # create observation space
         self.observation_space = OrderedDict()
         for idx in range(self.num_objs):
             self.observation_space[f'obj{idx}'] = Dict({"position": Box(-1, 1, shape=(2,), dtype=np.float32), "category": Discrete(self.num_classes)})
         self.observation_space = Dict(self.observation_space)
+
+        # run-time statistics
         self.cur_steps = 0
         self.exp_data = None
         self.num_episodes = 0
@@ -181,6 +186,8 @@ class BallGym(BallEnv):
         
         # update prev_state
         self.prev_state = cur_state
+        if self.auto_flatten:
+            cur_state = self.flatten_states([cur_state])[0]
         return cur_state, r, is_done, infos
 
     def reset(self, is_random=True, remove_collision=True):
@@ -212,7 +219,11 @@ class BallGym(BallEnv):
         self.init_state = self.get_state(self.balls_list)
         self.prev_state = deepcopy(self.init_state)
 
-        return self.init_state
+        if self.auto_flatten:
+            ret_state = self.flatten_states([self.init_state])[0]
+        else:
+            ret_state = self.init_state
+        return ret_state
 
     def sample_action(self):
         """
@@ -221,6 +232,9 @@ class BallGym(BallEnv):
         """
         action_np = np.random.normal(size=(self.num_objs * 2)).clip(-1, 1) * self.max_action
         action = self.unflatten_actions([action_np])[0]
+
+        if self.auto_flatten:
+            action = self.flatten_actions([action])[0]
         return action
     
     def _seed(self, seed=None):

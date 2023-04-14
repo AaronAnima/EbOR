@@ -78,6 +78,10 @@ def sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05,
     random_color = True: Circling
     random_color = False: Circling + Clustering
     """
+    # center margin: the edge of circle will not be too close to the wall bound
+    center_margin = 0.1
+    bound *= 1 - center_margin
+
     # sample a radius
     num_objs = num_per_class * len(category_list)
     r_min = r / np.sin(np.pi / num_objs)

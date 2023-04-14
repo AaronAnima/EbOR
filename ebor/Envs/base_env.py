@@ -15,6 +15,7 @@ class BallEnv(gym.Env):
         self.action_type = action_type
         self.max_episode_len = max_episode_len
         self.time_freq = time_freq
+        self.sim_steps_each_time = 4
         self.bound = WALL_BOUND
         self.r = BALL_RADIUS
 

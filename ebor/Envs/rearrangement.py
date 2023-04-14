@@ -132,7 +132,7 @@ class BallGym(BallEnv):
             likelihoods.append(get_pseudo_likelihood(state_np, self.pattern, self.num_per_class, self.catetory_list, self.bound, self.r))
         return np.stack(likelihoods)
 
-    def step(self, action, step_num=4, centralized=False, soft_collision=False):
+    def step(self, action, centralized=False, soft_collision=False):
         """
         action: input action, [action_dict_1, action_dict_2, ...]
         for each dim,  [-max_vel,  max_vel]
@@ -160,10 +160,10 @@ class BallGym(BallEnv):
         
         # simulate velocities and calc collision num
         self.apply_control(controls, self.balls_list)
-        for _ in range(step_num):
+        for _ in range(self.sim_steps_each_time):
             p.stepSimulation(physicsClientId=self.cid)
             collision_num += self.get_collision_num(self.balls_list, centralized)
-        collision_num /= step_num 
+        collision_num /= self.sim_steps_each_time 
         if not soft_collision:
             collision_num = (collision_num > 0) 
 

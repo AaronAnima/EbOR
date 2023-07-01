@@ -16,6 +16,7 @@ for pattern in pattern_list:
                 id='{}-{}Ball{}Class-v0'.format(pattern, num_objs, n_color),
                 entry_point='ebor.Envs.rearrangement:BallGym',
                 max_episode_steps=horizon,
+                
                 kwargs={
                     'num_per_class': num_objs//n_color,
                     'category_list': category_list[:n_color],

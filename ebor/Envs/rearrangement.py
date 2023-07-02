@@ -388,39 +388,10 @@ class BoxGym(BoxEnv):
         for each dim,  [-1,  1]
         """
         collision_num = 0
-        # set_trace()
         # flatten: dicts_list -> controls
         if not isinstance(action, OrderedDict):
             action = self.unflatten_actions([action])[0]
         assert isinstance(action, OrderedDict) and len(action.keys()) == 3
-        # set_trace()
-
-        # if isinstance(action, OrderedDict):
-        #     controls = self.flatten_actions([action])[0].reshape((-1, 2)) # [num_objs, 2]
-        # else:
-        #     assert isinstance(action, np.ndarray)
-        #     controls = action.reshape((-1, 2))
-        # assert controls.shape[0] == self.num_objs 
-
-        # # normalise controls
-        # max_vel_norm = np.max(np.abs(controls))
-        # scale_factor = self.max_action / (max_vel_norm+1e-7)
-        # scale_factor = np.min([scale_factor, 1])
-        # controls = scale_factor * controls
-
-        # # check input-scale of the action
-        # max_vel = controls.max()
-        # if max_vel > self.max_action:
-        #     print(f'!!!!!current max velocity {max_vel} exceeds max action {self.max_action}!!!!!')
-        
-        # # simulate velocities and calc collision num
-        # self.apply_control(controls, self.balls_list)
-        # for _ in range(self.sim_steps_each_time):
-        #     p.stepSimulation(physicsClientId=self.cid)
-        #     collision_num += self.get_collision_num(self.balls_list, centralized)
-        # collision_num /= self.sim_steps_each_time 
-        # if not soft_collision:
-        #     collision_num = (collision_num > 0) 
 
         # unnormalize and step action
         pick_pos = (self.bound - self.r) * action['pick']

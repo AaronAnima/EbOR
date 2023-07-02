@@ -9,6 +9,8 @@ def sample_example_positions(num_per_class, category_list, pattern, bound, r):
         balls_dict = sample_cluster_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'InterlaceStacking':
         balls_dict = sample_interlace_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
+    elif pattern == 'LineStacking':
+        balls_dict = sample_lining_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'Circle':
         balls_dict = sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05, random_color=True)
     elif pattern == 'CircleCluster':
@@ -67,6 +69,24 @@ def sample_cluster_stacking_positions(num_per_class, category_list, bound, r, sc
     return positions: (num_objs, 3)  [x, y]
     """
     centers = sample_centers(len(category_list))
+    balls_dict = {key: [] for key in category_list}
+    for i in range(len(category_list)):
+        heights = (np.arange(1, num_per_class+1, 1) * 2 - 1) * r
+        xy_positions = np.zeros((num_per_class, 2))
+        xy_positions += centers[i]
+        positions = np.concatenate([xy_positions, heights.reshape((-1, 1))], axis=-1)
+        balls_dict[category_list[i]] = positions
+    return balls_dict
+
+def sample_lining_stacking_positions(num_per_class, category_list, bound, r, scale=0.05):
+    """
+    sample i.i.d. gaussian 2-d positions centered on 'center'
+    return positions: (num_objs, 3)  [x, y]
+    """
+    # centers = sample_centers(len(category_list))
+    centers = np.zeros((num_per_class, 2))
+    centers[:, 0] = (np.arange(1, num_per_class+1, 1) * 2 - 1) * 0.5
+    set_trace()
     balls_dict = {key: [] for key in category_list}
     for i in range(len(category_list)):
         heights = (np.arange(1, num_per_class+1, 1) * 2 - 1) * r

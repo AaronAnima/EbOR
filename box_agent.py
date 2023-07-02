@@ -55,7 +55,8 @@ FPS = 5
 IM_SIZE = 1024
 num_videos = 100
 # pattern = 'ClusterStacking'
-pattern = 'InterlaceStacking'
+# pattern = 'InterlaceStacking'
+pattern = 'LineStacking'
 num_per_class = 4
 class_num = 3
 env = gym.make(f'{pattern}-{num_per_class*class_num}Box{class_num}Class-v0', is_gui=IS_GUI)

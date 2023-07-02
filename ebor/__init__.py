@@ -29,7 +29,7 @@ for pattern in pattern_list:
             )
 
 stacking_horizon = 500
-patterns = ['ClusterStacking', 'InterlaceStacking']
+patterns = ['ClusterStacking', 'InterlaceStacking', 'LineStacking']
 for pattern in patterns:
     for class_num in range(2, 4):
         for num_per_class in range(1, 5):

@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import pybullet as p
 import os
+import time
 from ipdb import set_trace
 from collections import OrderedDict
 from ebor.Envs.constants import BALL_RADIUS, WALL_BOUND, BOX_SIDELEN
@@ -23,7 +24,7 @@ class BallEnv(gym.Env):
         if is_gui:
             self.cid = p.connect(p.GUI)  # or p.DIRECT for non-graphical version
             # reset cam-pose to a top-down view
-            p.resetDebugVisualizerCamera(cameraDistance=0.6, cameraYaw=0., cameraPitch=-89.,
+            p.resetDebugVisualizerCamera(cameraDistance=1.5 * WALL_BOUND, cameraYaw=0., cameraPitch=-89.,
                                          cameraTargetPosition=[0, 0, 0], physicsClientId=self.cid)
         else:
             self.cid = p.connect(p.DIRECT)  # or p.DIRECT for non-graphical version
@@ -82,7 +83,7 @@ class BallEnv(gym.Env):
             cur_pos = np.clip(cur_pos, -(self.bound - self.r), (self.bound - self.r))
             cur_ori = p.getQuaternionFromEuler([0, 0, 0])
             if flag_load:
-                cur_list.append(p.loadURDF(cur_urdf, [cur_pos[0].item(), cur_pos[1].item(), self.r], cur_ori, physicsClientId=self.cid))
+                cur_list.append(p.loadURDF(cur_urdf, [cur_pos[0].item(), cur_pos[1].item(), self.r], cur_ori, physicsClientId=self.cid, globalScaling=self.r / 0.035))
             else:
                 p.resetBasePositionAndOrientation(item, [cur_pos[0].item(), cur_pos[1].item(), self.r], cur_ori, physicsClientId=self.cid)
                 p.resetBaseVelocity(item, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
@@ -262,7 +263,7 @@ class BoxEnv(gym.Env):
         if is_gui:
             self.cid = p.connect(p.GUI)  # or p.DIRECT for non-graphical version
             # reset cam-pose to a top-down view
-            p.resetDebugVisualizerCamera(cameraDistance=0.6, cameraYaw=0., cameraPitch=-89.,
+            p.resetDebugVisualizerCamera(cameraDistance=0.7*WALL_BOUND, cameraYaw=0., cameraPitch=-45.,
                                          cameraTargetPosition=[0, 0, 0], physicsClientId=self.cid)
         else:
             self.cid = p.connect(p.DIRECT)  # or p.DIRECT for non-graphical version
@@ -312,16 +313,20 @@ class BoxEnv(gym.Env):
         return an  image of  cur state: [img_size, img_size, 3], BGR
         """
         
-        viewmatrix = p.computeViewMatrix(
-            cameraEyePosition=[0, -WALL_BOUND*2.5, WALL_BOUND*2.5],
+        viewmatrix = p.computeViewMatrixFromYawPitchRoll(
+            distance=3.0*WALL_BOUND, 
+            yaw=0.,
+            pitch=-45.,
+            roll=0.,
             cameraTargetPosition=[0, 0, 0],
-            cameraUpVector=[0, 1, 0],
+            upAxisIndex=2,
         )
+
         projectionmatrix = p.computeProjectionMatrixFOV(
             fov=45.0,
             aspect=1.0,
             nearVal=0.1,
-            farVal=3.1,
+            farVal=20.1,
         )
         _, _, rgba, _, _ = p.getCameraImage(img_size, img_size, viewMatrix=viewmatrix,
                                             projectionMatrix=projectionmatrix, physicsClientId=self.cid)
@@ -345,10 +350,16 @@ class BoxEnv(gym.Env):
             cur_ori = p.getQuaternionFromEuler([0, 0, 0])
             if flag_load:
                 cur_list.append(p.loadURDF(cur_urdf, [cur_pos[0].item(), cur_pos[1].item(), cur_pos[2].item()], cur_ori, physicsClientId=self.cid))
+                # time.sleep(0.5)
             else:
                 p.resetBasePositionAndOrientation(item, [cur_pos[0].item(), cur_pos[1].item(), cur_pos[2].item()], cur_ori, physicsClientId=self.cid)
                 p.resetBaseVelocity(item, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
         return cur_list
+    
+    def clear_velocities(self):
+        objs_list = self.get_objs_list()
+        for i, item in enumerate(objs_list):
+            p.resetBaseVelocity(item, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
 
     def get_objs_list(self):
         objs_list = [value for sublist in self.boxes.values() for value in sublist]
@@ -432,7 +443,7 @@ class BoxEnv(gym.Env):
         # flag_height = np.max(np.abs(positions[:, -1:] - self.r)) < 0.001
         return flag_x_bound & flag_y_bound, (positions[:, -1:])
 
-    def apply_control(self, controls, obj_id, obj_list=None, simulation_steps=10):
+    def apply_control(self, controls, obj_idx, obj_list=None, simulation_steps=0):
         """
         pick and place 
         obj_id: the target object's ID
@@ -443,39 +454,44 @@ class BoxEnv(gym.Env):
         if obj_list is None:
             obj_list = self.get_objs_list()
         
-        if obj_id > self.num_objs or obj_id < 0:
+        if obj_idx > self.num_objs or obj_idx < 0:
             return
         
         picking_pos = controls[:2]
         placing_pos = controls[2:]
+        obj_id = obj_list[obj_idx]
         target_obj_pos, _ = p.getBasePositionAndOrientation(obj_id, physicsClientId=self.cid)
         target_obj_pos = np.array(target_obj_pos)
         
         ''' check whether the obj is pickable '''
         # the picking point should touch the target obj
-        flag_pickable = np.min(np.abs(target_obj_pos[:2] - picking_pos)) < self.r
-        set_trace()
-        print(flag_pickable)
-        # the target obj should not be covered by other boxes
-        for objID in obj_list:
-            if objID == obj_id:
-                continue
-            # if overlap in x,y, then check z
-            cur_obj_pos, _ = p.getBasePositionAndOrientation(objID, physicsClientId=self.cid)
-            cur_obj_pos = np.array(cur_obj_pos)
-            if np.min(np.abs(target_obj_pos[:2] - cur_obj_pos[:2])) < 2 * self.r:
-                if target_obj_pos[2] < cur_obj_pos[2] - self.r * 2:
-                    # means the cur_obj is over the target obj
-                    flag_pickable = False
-                    break
+        # flag_pickable = np.min(np.abs(target_obj_pos[:2] - picking_pos)) < self.r
+        # # set_trace()
+        # # print(flag_pickable)
+        # # the target obj should not be covered by other boxes
+        # for objID in obj_list:
+        #     if objID == obj_id:
+        #         continue
+        #     # if overlap in x,y, then check z
+        #     cur_obj_pos, _ = p.getBasePositionAndOrientation(objID, physicsClientId=self.cid)
+        #     cur_obj_pos = np.array(cur_obj_pos)
+        #     if np.min(np.abs(target_obj_pos[:2] - cur_obj_pos[:2])) < 2 * self.r:
+        #         if target_obj_pos[2] < cur_obj_pos[2] - self.r * 2:
+        #             # means the cur_obj is over the target obj
+        #             flag_pickable = False
+        #             set_trace()
+        #             break
+        flag_pickable = True
 
         ''' if pickable, then place '''
-        print(flag_pickable)
+        # print(flag_pickable)
         if flag_pickable:
+            lifting_margin = 0.0
             # first reset the position and location
             placing_ori = p.getQuaternionFromEuler([0, 0, 0])
-            p.resetBasePositionAndOrientation(obj_id, [placing_pos[0].item(), placing_pos[1].item(), placing_pos[2].item()], placing_ori, physicsClientId=self.cid)
+            p.resetBasePositionAndOrientation(obj_id, [placing_pos[0].item(), placing_pos[1].item(), placing_pos[2].item()+lifting_margin], placing_ori, physicsClientId=self.cid)
             p.resetBaseVelocity(obj_id, [0, 0, 0], [0, 0, 0], physicsClientId=self.cid)
+
 
             # then step simulation, till converge
             for _ in range(simulation_steps):

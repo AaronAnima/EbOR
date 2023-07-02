@@ -5,8 +5,10 @@ from ipdb import set_trace
 def sample_example_positions(num_per_class, category_list, pattern, bound, r):
     if pattern == 'Cluster':
         balls_dict = sample_cluster_positions(num_per_class, category_list, bound, r, scale=0.05)
-    if pattern == 'Stacking':
-        balls_dict = sample_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
+    elif pattern == 'ClusterStacking':
+        balls_dict = sample_cluster_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
+    elif pattern == 'InterlaceStacking':
+        balls_dict = sample_interlace_stacking_positions(num_per_class, category_list, bound, r, scale=0.05)
     elif pattern == 'Circle':
         balls_dict = sample_circle_positions(num_per_class, category_list, bound, r, scale=0.05, random_color=True)
     elif pattern == 'CircleCluster':
@@ -23,7 +25,7 @@ def sample_example_positions(num_per_class, category_list, pattern, bound, r):
 # -----------------------------------------------------------------------------------------------------------------------
 
 # sample center positions for each class, used in clustering
-def sample_centers(num_classes, radius=0.18, random_shuffle=True, random_rotate=True):
+def sample_centers(num_classes, radius=0.5, random_shuffle=True, random_rotate=True):
     """
     sample centers for each category, note that each pair of centers are equally spaced
     random_shuffle: given c1, determine whether to shuffle the order of c2, c3, ... 
@@ -59,7 +61,7 @@ def sample_cluster_positions(num_per_class, category_list, bound, r, scale=0.05)
         balls_dict[category_list[i]] = positions
     return balls_dict
 
-def sample_stacking_positions(num_per_class, category_list, bound, r, scale=0.05):
+def sample_cluster_stacking_positions(num_per_class, category_list, bound, r, scale=0.05):
     """
     sample i.i.d. gaussian 2-d positions centered on 'center'
     return positions: (num_objs, 3)  [x, y]
@@ -74,18 +76,47 @@ def sample_stacking_positions(num_per_class, category_list, bound, r, scale=0.05
         balls_dict[category_list[i]] = positions
     return balls_dict
 
+def sample_interlace_stacking_positions(num_per_class, category_list, bound, r, scale=0.05):
+    """
+    sample i.i.d. gaussian 2-d positions centered on 'center'
+    return positions: (num_objs, 3)  [x, y]
+    """
+    center_num = num_per_class + 1
+    while num_per_class % center_num != 0:
+        center_num = random.randint(1, num_per_class)
+    num_per_center_color = num_per_class // center_num
+    centers = sample_centers(center_num) 
+    balls_dict = {key: [] for key in category_list}
+    
+    # random color order, from bottom to top
+    color_order_list = list(range(len(category_list)))
+    random.shuffle(color_order_list)
+
+    for i in range(center_num):
+        num_cur_objs = num_per_center_color * len(category_list)
+        heights = (np.arange(1, num_cur_objs+1, 1) * 2 - 1) * r
+        xy_positions = np.zeros((num_cur_objs, 2))
+        xy_positions += centers[i]
+        positions = np.concatenate([xy_positions, heights.reshape((-1, 1))], axis=-1) * (bound - r) # remember to normalize
+        for idx, j in enumerate(color_order_list):
+            for k in range(num_per_center_color):
+                balls_dict[category_list[j]].append(positions[idx*num_per_center_color + k])
+    balls_dict = {key: np.stack(balls_dict[key]) for key in balls_dict.keys()}
+    return balls_dict
+
 # -----------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------- Random ----------------------------------------------------------
 # -----------------------------------------------------------------------------------------------------------------------
 
-def sample_random_positions(num_per_class, category_list, bound, r, pos_dim=2, scale=0.3):
+def sample_random_positions(num_per_class, category_list, bound, r, pos_dim=2, scale=1.0):
     """
     return positions: (num_objs, 2)  [x, y]
     scale = self.bound / 1
     """
     balls_dict = {key: [] for key in category_list}
     for i in range(len(category_list)):
-        positions = np.random.uniform(-1, 1, size=(num_per_class, 2)) * scale
+        positions = np.random.uniform(-(bound - r), bound - r, size=(num_per_class, 2))
+        # positions = np.zeros((num_per_class, 2))
         if pos_dim == 3:
             positions = np.concatenate([positions, np.ones((num_per_class, 1)) * r], axis=-1)
         balls_dict[category_list[i]] = positions

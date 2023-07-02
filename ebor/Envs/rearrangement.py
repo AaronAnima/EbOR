@@ -425,8 +425,8 @@ class BoxGym(BoxEnv):
         # unnormalize and step action
         pick_pos = (self.bound - self.r) * action['pick']
         place_pos = (self.bound - self.r) * action['place']
-        obj_id = action['id']
-        self.apply_control(np.concatenate([pick_pos, place_pos], axis=0), obj_id, self.boxes_list)
+        obj_idx = action['id']
+        self.apply_control(np.concatenate([pick_pos, place_pos], axis=0), obj_idx, self.boxes_list)
         collision_num = 0
 
         # judge if is done
@@ -460,6 +460,7 @@ class BoxGym(BoxEnv):
         else:  # init to target distribution
             boxes_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern=self.pattern, bound=self.bound, r=self.r)
 
+        # set_trace()
         for color, positions in boxes_dict.items():
             self.boxes[color] = self.add_boxes(positions, color)
         
@@ -467,14 +468,20 @@ class BoxGym(BoxEnv):
         self.boxes_list = [value for sublist in self.boxes.values() for value in sublist]
         p.stepSimulation(physicsClientId=self.cid)
         if remove_collision:
+            for _ in range(100):
+                p.stepSimulation(physicsClientId=self.cid)
+            # set_trace()
             total_steps = 0
-            while self.get_collision_num(self.boxes_list) > 0:
-                for _ in range(20):
-                    p.stepSimulation(physicsClientId=self.cid)
-                total_steps += 20
-                if total_steps > 10000:
-                    print('Warning! Reset takes too much trial!')
-                    break
+            # while self.get_collision_num(self.boxes_list) > 0:
+            #     for _ in range(20):
+            #         p.stepSimulation(physicsClientId=self.cid)
+            #     total_steps += 20
+            #     if total_steps > 1000:
+            #         print('Warning! Reset takes too much trial!')
+            #         break
+        
+            # # clear velocities
+            # self.clear_velocities()
         
         # update episodic information
         self.cur_steps = 0

@@ -22,46 +22,30 @@ for pattern in pattern_list:
                     'pattern': pattern,
                     'exp_data': None,
                     'time_freq': 4*50,
-                    'is_gui': False,
                     'max_action': 0.3,
                     'max_episode_len': horizon,
                     'action_type': 'vel',
                 },
             )
 
-stacking_horizon = 30
-pattern = 'Stacking'
-register(
-    id='{}-{}Box{}Class-v0'.format(pattern, 3, 3),
-    entry_point='ebor.Envs.rearrangement:BoxGym',
-    max_episode_steps=stacking_horizon,
-    kwargs={
-        'num_per_class': 3,
-        'category_list': category_list[:3],
-        'pattern': pattern,
-        'exp_data': None,
-        'time_freq': 60,
-        'is_gui': False,
-        'max_episode_len': stacking_horizon,
-        'action_type': 'vel',
-    },
-)
+stacking_horizon = 500
+patterns = ['ClusterStacking', 'InterlaceStacking']
+for pattern in patterns:
+    for class_num in range(2, 4):
+        for num_per_class in range(1, 5):
+            register(
+                id='{}-{}Box{}Class-v0'.format(pattern, num_per_class*class_num, class_num),
+                entry_point='ebor.Envs.rearrangement:BoxGym',
+                max_episode_steps=stacking_horizon,
+                kwargs={
+                    'num_per_class': num_per_class,
+                    'category_list': category_list[:class_num],
+                    'pattern': pattern,
+                    'exp_data': None,
+                    'time_freq': 60,
+                    'max_episode_len': stacking_horizon,
+                    'action_type': 'vel',
+                },
+            )
 
-stacking_horizon = 30
-pattern = 'Stacking'
-register(
-    id='{}-{}Box{}Class-v0'.format(pattern, 2, 2),
-    entry_point='ebor.Envs.rearrangement:BoxGym',
-    max_episode_steps=stacking_horizon,
-    kwargs={
-        'num_per_class': 2,
-        'category_list': category_list[:2],
-        'pattern': pattern,
-        'exp_data': None,
-        'time_freq': 60,
-        'is_gui': False,
-        'max_episode_len': stacking_horizon,
-        'action_type': 'vel',
-    },
-)
 

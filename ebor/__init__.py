@@ -16,7 +16,6 @@ for pattern in pattern_list:
                 id='{}-{}Ball{}Class-v0'.format(pattern, num_objs, n_color),
                 entry_point='ebor.Envs.rearrangement:BallGym',
                 max_episode_steps=horizon,
-                
                 kwargs={
                     'num_per_class': num_objs//n_color,
                     'category_list': category_list[:n_color],
@@ -29,3 +28,21 @@ for pattern in pattern_list:
                     'action_type': 'vel',
                 },
             )
+
+register(
+    id='{}-{}Ball{}Class-v0'.format(pattern, num_objs, n_color),
+    entry_point='ebor.Envs.rearrangement:BallGym',
+    max_episode_steps=horizon,
+    kwargs={
+        'num_per_class': num_objs // n_color,
+        'category_list': category_list[:n_color],
+        'pattern': pattern,
+        'exp_data': None,
+        'time_freq': 4*50,
+        'is_gui': False,
+        'max_action': 0.3,
+        'max_episode_len': horizon,
+        'action_type': 'vel',
+    },
+)
+

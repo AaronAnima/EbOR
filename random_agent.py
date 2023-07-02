@@ -15,6 +15,7 @@ state = env.reset(is_random=False)  # if is_random=False, the env will reset to 
 if args.render:
     cv2.imshow('target', env.render())   # show the target image
     cv2.waitKey(1)
+
 while True:
     if args.render:
         state = env.reset(is_random=False)  # if is_random=False, the env will reset to a target example state

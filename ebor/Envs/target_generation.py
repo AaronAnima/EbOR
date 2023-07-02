@@ -1,5 +1,6 @@
 import numpy as np
 import random
+from ipdb import set_trace
 
 def sample_example_positions(num_per_class, category_list, pattern, bound, r):
     if pattern == 'Cluster':
@@ -67,9 +68,9 @@ def sample_stacking_positions(num_per_class, category_list, bound, r, scale=0.05
     balls_dict = {key: [] for key in category_list}
     for i in range(len(category_list)):
         heights = (np.arange(1, num_per_class+1, 1) * 2 - 1) * r
-        xy_positions = np.zeros(num_per_class, 2)
+        xy_positions = np.zeros((num_per_class, 2))
         xy_positions += centers[i]
-        positions = np.concatenate([xy_positions, heights.reshape(-1, 1)])
+        positions = np.concatenate([xy_positions, heights.reshape((-1, 1))], axis=-1)
         balls_dict[category_list[i]] = positions
     return balls_dict
 
@@ -84,7 +85,9 @@ def sample_random_positions(num_per_class, category_list, bound, r, pos_dim=2, s
     """
     balls_dict = {key: [] for key in category_list}
     for i in range(len(category_list)):
-        positions = np.random.uniform(-1, 1, size=(num_per_class, pos_dim)) * scale
+        positions = np.random.uniform(-1, 1, size=(num_per_class, 2)) * scale
+        if pos_dim == 3:
+            positions = np.concatenate([positions, np.ones((num_per_class, 1)) * r], axis=-1)
         balls_dict[category_list[i]] = positions
     return balls_dict
 

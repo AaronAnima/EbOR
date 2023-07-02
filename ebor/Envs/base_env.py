@@ -313,7 +313,7 @@ class BoxEnv(gym.Env):
         """
         
         viewmatrix = p.computeViewMatrix(
-            cameraEyePosition=[0, self.bound - self.r, 1.0],
+            cameraEyePosition=[0, -WALL_BOUND*2.5, WALL_BOUND*2.5],
             cameraTargetPosition=[0, 0, 0],
             cameraUpVector=[0, 1, 0],
         )
@@ -432,7 +432,7 @@ class BoxEnv(gym.Env):
         # flag_height = np.max(np.abs(positions[:, -1:] - self.r)) < 0.001
         return flag_x_bound & flag_y_bound, (positions[:, -1:])
 
-    def apply_control(self, controls, obj_id, obj_list=None, simulation_steps=1000):
+    def apply_control(self, controls, obj_id, obj_list=None, simulation_steps=10):
         """
         pick and place 
         obj_id: the target object's ID
@@ -449,23 +449,28 @@ class BoxEnv(gym.Env):
         picking_pos = controls[:2]
         placing_pos = controls[2:]
         target_obj_pos, _ = p.getBasePositionAndOrientation(obj_id, physicsClientId=self.cid)
+        target_obj_pos = np.array(target_obj_pos)
         
         ''' check whether the obj is pickable '''
         # the picking point should touch the target obj
         flag_pickable = np.min(np.abs(target_obj_pos[:2] - picking_pos)) < self.r
+        set_trace()
+        print(flag_pickable)
         # the target obj should not be covered by other boxes
-        for objID in zip(obj_list):
+        for objID in obj_list:
             if objID == obj_id:
                 continue
             # if overlap in x,y, then check z
             cur_obj_pos, _ = p.getBasePositionAndOrientation(objID, physicsClientId=self.cid)
+            cur_obj_pos = np.array(cur_obj_pos)
             if np.min(np.abs(target_obj_pos[:2] - cur_obj_pos[:2])) < 2 * self.r:
-                if target_obj_pos[2] < cur_obj_pos[2]:
+                if target_obj_pos[2] < cur_obj_pos[2] - self.r * 2:
                     # means the cur_obj is over the target obj
                     flag_pickable = False
                     break
 
         ''' if pickable, then place '''
+        print(flag_pickable)
         if flag_pickable:
             # first reset the position and location
             placing_ori = p.getQuaternionFromEuler([0, 0, 0])

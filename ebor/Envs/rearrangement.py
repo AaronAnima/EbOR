@@ -256,7 +256,6 @@ class BallGym(BallEnv):
 class BoxGym(BoxEnv):
     def __init__(self, pattern='Stacking', auto_flatten=False, **kwargs):
         super().__init__(**kwargs)
-        self.max_action = kwargs['max_action']
         self.num_classes = len(self.catetory_list)
         self.auto_flatten = auto_flatten
 
@@ -371,7 +370,7 @@ class BoxGym(BoxEnv):
         output: a nparr of pseudo likelihoods shape [num_states,] 
         """
         assert isinstance(states_list, list)
-        return np.zeros(self.num_objs, 0)
+        return np.zeros((self.num_objs, 0))
         # likelihoods = []
         # for state in states_list:
         #     if isinstance(state, OrderedDict):
@@ -386,14 +385,15 @@ class BoxGym(BoxEnv):
     def step(self, action, centralized=False, soft_collision=False):
         """
         action: input action, [action_dict_1, action_dict_2, ...]
-        for each dim,  [-max_vel,  max_vel]
+        for each dim,  [-1,  1]
         """
         collision_num = 0
-        
+        # set_trace()
         # flatten: dicts_list -> controls
         if not isinstance(action, OrderedDict):
             action = self.unflatten_actions([action])[0]
         assert isinstance(action, OrderedDict) and len(action.keys()) == 3
+        # set_trace()
 
         # if isinstance(action, OrderedDict):
         #     controls = self.flatten_actions([action])[0].reshape((-1, 2)) # [num_objs, 2]
@@ -426,7 +426,7 @@ class BoxGym(BoxEnv):
         pick_pos = (self.bound - self.r) * action['pick']
         place_pos = (self.bound - self.r) * action['place']
         obj_id = action['id']
-        self.apply_control(np.concatenate([pick_pos, place_pos], dim=0), obj_id, self.balls_list)
+        self.apply_control(np.concatenate([pick_pos, place_pos], axis=0), obj_id, self.boxes_list)
         collision_num = 0
 
         # judge if is done
@@ -434,7 +434,7 @@ class BoxGym(BoxEnv):
         is_done = (self.cur_steps >= self.max_episode_len)
 
         # current state
-        cur_state = self.get_state(self.balls_list)
+        cur_state = self.get_state(self.boxes_list)
         
         # calc reward, currently it is defined as delta-likelihood
         r = self.pseudo_likelihoods([cur_state]) - self.pseudo_likelihoods([self.prev_state])
@@ -456,19 +456,19 @@ class BoxGym(BoxEnv):
         self.num_episodes += 1
         # initialise objects
         if is_random:
-            balls_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern='Random3D', bound=self.bound, r=self.r)
+            boxes_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern='Random3D', bound=self.bound, r=self.r)
         else:  # init to target distribution
-            balls_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern=self.pattern, bound=self.bound, r=self.r)
+            boxes_dict = sample_example_positions(self.num_per_class, self.catetory_list, pattern=self.pattern, bound=self.bound, r=self.r)
 
-        for color, positions in balls_dict.items():
-            self.balls[color] = self.add_boxes(positions, color)
+        for color, positions in boxes_dict.items():
+            self.boxes[color] = self.add_boxes(positions, color)
         
         # remove remaining collisions via physical simulation
-        self.balls_list = [value for sublist in self.balls.values() for value in sublist]
+        self.boxes_list = [value for sublist in self.boxes.values() for value in sublist]
         p.stepSimulation(physicsClientId=self.cid)
         if remove_collision:
             total_steps = 0
-            while self.get_collision_num(self.balls_list) > 0:
+            while self.get_collision_num(self.boxes_list) > 0:
                 for _ in range(20):
                     p.stepSimulation(physicsClientId=self.cid)
                 total_steps += 20
@@ -478,7 +478,7 @@ class BoxGym(BoxEnv):
         
         # update episodic information
         self.cur_steps = 0
-        self.init_state = self.get_state(self.balls_list)
+        self.init_state = self.get_state(self.boxes_list)
         self.prev_state = deepcopy(self.init_state)
 
         if self.auto_flatten:
@@ -500,4 +500,4 @@ class BoxGym(BoxEnv):
         random.seed(seed)
 
     def get_obs(self):
-        return self.get_state(self.balls_list)
+        return self.get_state(self.boxes_list)
